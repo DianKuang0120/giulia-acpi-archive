@@ -1,0 +1,40 @@
+## @file
+#  Install the Lanai (SM8650) ACPI tables from the firmware image.
+#
+#  AcpiPlatformDxe reads the tables back from a firmware volume and fails on
+#  this platform, so the tables are linked into this driver instead.
+#
+#  Copyright (c) 2026, Project Silicium contributors.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AcpiTablesDxe
+  FILE_GUID                      = 2C4E7A19-5B8D-4F3A-9E21-7A6D4C8B1F03
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = AcpiTablesDxeEntryPoint
+
+[Sources]
+  AcpiTablesDxe.c
+  AcpiTablesData.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiAcpiTableProtocolGuid                     ## CONSUMES
+
+[Depex]
+  gEfiAcpiTableProtocolGuid

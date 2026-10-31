@@ -1,0 +1,309 @@
+diff --git a/Platforms/OnePlus/giuliaPkg/Include/APRIORI.inc b/Platforms/OnePlus/giuliaPkg/Include/APRIORI.inc
+index 8d2da35..d581150 100644
+--- a/Platforms/OnePlus/giuliaPkg/Include/APRIORI.inc
++++ b/Platforms/OnePlus/giuliaPkg/Include/APRIORI.inc
+@@ -68,6 +68,14 @@ APRIORI DXE {
+   INF MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
+   INF MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe.inf
+   INF MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
++
++  #
++  # ACPI must be installed before BdsDxe scans the boot options.
++  # AcpiPlatformDxe is intentionally not used, see giuliaPkg/Drivers/AcpiTablesDxe.
++  #
++  INF MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
++  INF giuliaPkg/Drivers/AcpiTablesDxe/AcpiTablesDxe.inf
++
+   INF MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+ 
+   INF Binaries/giulia/QcomPkg/Drivers/SPIDxe/SPIDxe.inf
+diff --git a/Platforms/OnePlus/giuliaPkg/Include/DXE.inc b/Platforms/OnePlus/giuliaPkg/Include/DXE.inc
+index 6712a07..01f6f06 100644
+--- a/Platforms/OnePlus/giuliaPkg/Include/DXE.inc
++++ b/Platforms/OnePlus/giuliaPkg/Include/DXE.inc
+@@ -107,3 +107,6 @@
+   INF Binaries/giulia/QcomPkg/Drivers/RNGDxe/RngDxe.inf
+   INF Binaries/giulia/QcomPkg/Drivers/PILDxe/PILDxe.inf
+   INF Binaries/giulia/QcomPkg/Drivers/PILProxyDxe/PILProxyDxe.inf
++
++  # Debug log to file (ESP partition) - aids diagnosing black-screen boots
++  INF SiliciumPkg/Drivers/LogToFileDxe/LogToFileDxe.inf
+diff --git a/Platforms/OnePlus/giuliaPkg/Library/MemoryMapLib/MemoryMapLib.c b/Platforms/OnePlus/giuliaPkg/Library/MemoryMapLib/MemoryMapLib.c
+index f9023c8..4fa260d 100644
+--- a/Platforms/OnePlus/giuliaPkg/Library/MemoryMapLib/MemoryMapLib.c
++++ b/Platforms/OnePlus/giuliaPkg/Library/MemoryMapLib/MemoryMapLib.c
+@@ -6,13 +6,25 @@ gMemoryDescriptor[] = {
+   // Name, Address, Length, HobOption, ResourceType, ResourceAttribute, MemoryType, ArmAttribute
+ 
+   // DDR Regions
++  {"HYP",                 0x80000000, 0x00E00000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
++  {"CPUSYS_VM",           0x80E00000, 0x00400000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
++  {"RSRV1",               0x81200000, 0x004E0000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+   {"RSRV0",               0x816E0000, 0x00320000, AddMem, SYS_MEM, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+   {"XBL_DT",              0x81A00000, 0x00040000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+   {"XBL_Ramdump",         0x81A40000, 0x001C0000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
+   {"AOP",                 0x81C00000, 0x000A0000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"AOP_DB",              0x81CA0000, 0x00044000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
+   {"UEFI_Log",            0x81CE4000, 0x00010000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"ChipInfo",            0x81CF4000, 0x0000C000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
+   {"SMEM",                0x81D00000, 0x00200000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"ADSP_MHI",            0x81F00000, 0x00020000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"RSRV2",               0x81F20000, 0x00580000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+   {"PvmFw",               0x824A0000, 0x00100000, AddMem, SYS_MEM, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
++  {"RSRV3",               0x825A0000, 0x00060000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
++  {"GlobalSync",          0x82600000, 0x00100000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
++  {"TZStat",              0x82700000, 0x00100000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"QDSS",                0x82800000, 0x02000000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
++  {"RSRV4",               0x84800000, 0x07400000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+   {"PIL_Reserved",        0x8BC00000, 0x17580000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
+   {"DBI_Dump",            0xA6100000, 0x00F00000, NoHob,  MMAP_IO, INITIALIZED, Conv,   UNCACHED_UNBUFFERED_XN},
+   {"FD_Reserved",         0xA7000000, 0x00100000, AddMem, SYS_MEM, SYS_MEM_CAP, BsData, WRITE_BACK},
+@@ -26,8 +38,7 @@ gMemoryDescriptor[] = {
+   {"Sched_Heap",          0xA76D9000, 0x00400000, AddMem, SYS_MEM, SYS_MEM_CAP, BsData, WRITE_BACK_XN},
+   {"FV_Region",           0xA7AD9000, 0x00400000, AddMem, SYS_MEM, SYS_MEM_CAP, BsData, WRITE_BACK_XN},
+   {"UEFI_RESV",           0xA7ED9000, 0x00127000, AddMem, SYS_MEM, SYS_MEM_CAP, BsData, WRITE_BACK_XN},
+-  {"Kernel",              0xA8000000, 0x10000000, AddMem, SYS_MEM, SYS_MEM_CAP, Reserv, WRITE_BACK_XN},
+-  {"DXE_Heap",            0xB8000000, 0x1BA00000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},
++  {"DXE_Heap",            0xA8000000, 0x1BA00000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},
+   {"Display_Reserved",    0xD5100000, 0x02B00000, AddMem, MEM_RES, SYS_MEM_CAP, Reserv, WRITE_THROUGH_XN},
+   {"TZApps_Reserved",     0xD8800000, 0x1B000000, AddMem, MEM_RES, UNCACHEABLE, Reserv, UNCACHED_UNBUFFERED_XN},
+ 
+diff --git a/Platforms/OnePlus/giuliaPkg/giulia.dsc b/Platforms/OnePlus/giuliaPkg/giulia.dsc
+index e3ce375..8935858 100755
+--- a/Platforms/OnePlus/giuliaPkg/giulia.dsc
++++ b/Platforms/OnePlus/giuliaPkg/giulia.dsc
+@@ -39,6 +39,14 @@
+ !include LanaiPkg/LanaiPkg.dsc.inc
+ 
+ [PcdsFixedAtBuild]
++  #
++  # ACPI
++  #
++  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId|"QCOM  "
++  # "SM8650  " in little endian
++  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId|0x2020303536384D53
++  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision|0x00008650
++
+   #
+   # DDR Memory
+   #
+@@ -88,7 +96,21 @@
+   ConfigurationMapLib|giuliaPkg/Library/ConfigurationMapLib/ConfigurationMapLib.inf
+ 
+ [Components]
++  #
++  # Device Tree
++  #
++  SiliciumPkg/Drivers/FdtDxe/FdtDxe.inf
++
+   #
+   # ACPI Tables
+   #
+-  #giulia/AcpiTables.inf
++  giulia/AcpiTables.inf
++  giuliaPkg/Drivers/AcpiTablesDxe/AcpiTablesDxe.inf
++
++  #
++  # PSCI diagnostics: prints version and per-core state on the console
++  #
++  giuliaPkg/Drivers/PsciDiagDxe/PsciDiagDxe.inf
++
++  #
++  #
+diff --git a/Platforms/OnePlus/giuliaPkg/giulia.fdf b/Platforms/OnePlus/giuliaPkg/giulia.fdf
+index ecafdb7..7fbb69f 100644
+--- a/Platforms/OnePlus/giuliaPkg/giulia.fdf
++++ b/Platforms/OnePlus/giuliaPkg/giulia.fdf
+@@ -93,19 +93,23 @@ READ_LOCK_STATUS   = TRUE
+   INF SiliciumPkg/Drivers/SmBiosTableDxe/SmBiosTableDxe.inf
+ 
+   # ACPI
+-  #INF MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
+-  #INF MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
+-  #INF RuleOverride = ACPITABLE giulia/AcpiTables.inf
++  INF MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
++  #
++  # AcpiPlatformDxe reads the tables back from a firmware volume and crashes
++  # on this platform, so giuliaPkg/Drivers/AcpiTablesDxe installs them instead.
++  #
++  INF giuliaPkg/Drivers/AcpiTablesDxe/AcpiTablesDxe.inf
++
++  # PSCI diagnostics: prints version and per-core state on the console
++  INF giuliaPkg/Drivers/PsciDiagDxe/PsciDiagDxe.inf
++
++  # PSCI diagnostics: prints version and per-core state on the console
+ 
+   # IORT DT
+   INF QcomPkg/Drivers/IortDtDxe/IortDtDxe.inf
+ 
+-  # Device Tree
+-  #INF EmbeddedPkg/Drivers/DtPlatformDxe/DtPlatformDxe.inf
+-  #FILE FREEFORM = 25462CDA-221F-47DF-AC1D-259CFAA4E326 {
+-  #  SECTION RAW = giuliaPkg/FdtBlob/lanai-oneplus-giulia.dtb
+-  #  SECTION UI = "DeviceTreeBlob"
+-  #}
++  # Device Tree (installs gFdtTableGuid from the SEC FDT HOB)
++  INF SiliciumPkg/Drivers/FdtDxe/FdtDxe.inf
+ 
+   !include QcomPkg/Extra.fdf.inc
+ 
+diff --git a/Silicon/Qualcomm/LanaiPkg/LanaiPkg.dsc.inc b/Silicon/Qualcomm/LanaiPkg/LanaiPkg.dsc.inc
+index d8e888e..7428524 100644
+--- a/Silicon/Qualcomm/LanaiPkg/LanaiPkg.dsc.inc
++++ b/Silicon/Qualcomm/LanaiPkg/LanaiPkg.dsc.inc
+@@ -17,7 +17,19 @@
+   #
+   # KEP
+   #
+-  HAS_ACTLR_EL1_UNIMPLEMENTED_ERRATA         = 1
++  # MUST stay 0 on SM8650.  The errata patch rewrites every "mrs x?, actlr_el1"
++  # in winload/kernel into "mov x?, #0".  ACTLR_EL1 bit 6 is the SMP bit for
++  # Cortex-A720/X4; forcing the read to 0 leaves the secondary cores running
++  # without SMP enabled, so the machine hangs about half a turn into the
++  # Windows boot animation as soon as more than one CPU is started.
++  # Single-core builds boot fine, which is what made this so hard to spot.
++  #
++  # SM8650 has no such errata: the newer platforms in this tree (Kaanapali /
++  # SM8750, Moorea, Napali, ...) all set this to 0, only the older Lahaina /
++  # Palawan (SM8635) family sets it to 1.  The value here was inherited from
++  # the SM8635 table set, like the MADT problems.
++  #
++  HAS_ACTLR_EL1_UNIMPLEMENTED_ERRATA         = 0
+   HAS_AMCNTENSET0_EL0_UNIMPLEMENTED_ERRATA   = 1
+   HAS_GIC_V3_WITHOUT_IRM_FLAG_SUPPORT_ERRATA = 1
+   HAS_PSCI_MEMPROTECT_FAILING_ERRATA         = 0
+diff --git a/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/FrameBufferSerialPortLib.c b/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/FrameBufferSerialPortLib.c
+index d2844e0..9a7de70 100644
+--- a/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/FrameBufferSerialPortLib.c
++++ b/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/FrameBufferSerialPortLib.c
+@@ -7,6 +7,23 @@
+ #include "FrameBuffer.h"
+ #include "Font.h"
+ 
++//
++// File Log Buffer - mirrors the frame buffer debug output into a fixed
++// physical memory region so a later DXE driver (LogToFileDxe) can flush it
++// to a file on the ESP partition.  The region is the "Log_Buffer" memory map
++// entry (0xA7605000, 32 KiB), which is already reserved for UEFI log use.
++//
++// Layout:
++//   [0 .. 8)        UINT64 magic  ("FBLOG"  0x474F4C4246)
++//   [8 .. 16)       UINT64 length (bytes of log text)
++//   [16 .. SIZE)    log text (linear, stops when full)
++//
++#define LOG_BUFFER_BASE  0xA7605000ULL
++#define LOG_BUFFER_SIZE  0x8000ULL     // 32 KiB
++#define LOG_BUFFER_DATA  (LOG_BUFFER_BASE + 16)
++
++#define LOG_MAGIC  0x474F4C4246ULL     // "FBLOG" little-endian
++
+ inline
+ STATIC
+ UINT8*
+@@ -267,6 +284,29 @@ SerialPortWrite (
+     WriteFrameBuffer (FbBase, FbLength, *Buffer++);
+   }
+ 
++  // Mirror the debug message into the file-log buffer (shared via fixed PA).
++  {
++    volatile UINT64 *Magic  = (volatile UINT64 *)(UINTN)LOG_BUFFER_BASE;
++    volatile UINT64 *Length = (volatile UINT64 *)(UINTN)(LOG_BUFFER_BASE + 8);
++    UINT8           *Data   = (UINT8 *)(UINTN)LOG_BUFFER_DATA;
++    UINT64           Used   = *Length;
++
++    if (*Magic != LOG_MAGIC) {
++      *Magic  = LOG_MAGIC;
++      *Length = 0;
++      Used    = 0;
++    }
++
++    if (Used < (LOG_BUFFER_SIZE - 16)) {
++      UINTN CopyLen = NumberOfBytes;
++      if (CopyLen > ((LOG_BUFFER_SIZE - 16) - Used)) {
++        CopyLen = (UINTN)((LOG_BUFFER_SIZE - 16) - Used);
++      }
++      CopyMem (Data + Used, Buffer - NumberOfBytes, CopyLen);
++      *Length = Used + CopyLen;
++    }
++  }
++
+   // Enable Interrupts
+   if (InterruptState) {
+     ArmEnableInterrupts ();
+diff --git a/Silicon/Silicium/SiliciumPkg/Sec/AArch64/ModuleEntryPoint.S b/Silicon/Silicium/SiliciumPkg/Sec/AArch64/ModuleEntryPoint.S
+index 0c05ffa..5c7f0fc 100644
+--- a/Silicon/Silicium/SiliciumPkg/Sec/AArch64/ModuleEntryPoint.S
++++ b/Silicon/Silicium/SiliciumPkg/Sec/AArch64/ModuleEntryPoint.S
+@@ -13,6 +13,11 @@
+ .set CTRL_SPAN_BIT, BIT23
+ 
+ ASM_FUNC (_ModuleEntryPoint)
++  // Save the device-tree pointer handed over by the bootloader (ABL) in x0
++  // before anything clobbers it; SecMain() publishes it as an FDT HOB.
++  ldr   x9, =ASM_PFX (mDeviceTreeBase)
++  str   x0, [x9]
++
+   // Do Platform Specific Initialization
+   bl    ASM_PFX (PlatformAssemblyInitialize)
+ 
+diff --git a/Silicon/Silicium/SiliciumPkg/Sec/Sec.c b/Silicon/Silicium/SiliciumPkg/Sec/Sec.c
+index 8d586b3..7f286ea 100644
+--- a/Silicon/Silicium/SiliciumPkg/Sec/Sec.c
++++ b/Silicon/Silicium/SiliciumPkg/Sec/Sec.c
+@@ -16,8 +16,14 @@
+ #include <Library/TimerLib.h>
+ #include <Library/HobLib.h>
+ 
++#include <Guid/FdtHob.h>
++
+ #include "Sec.h"
+ 
++// Device tree pointer passed by the bootloader (ABL) in x0.  Written from
++// ModuleEntryPoint.S before the C runtime starts, hence non-static.
++UINTN  mDeviceTreeBase = 0;
++
+ #ifndef MDEPKG_NDEBUG
+ STATIC
+ VOID
+@@ -118,6 +124,13 @@ SecMain (VOID)
+     return;
+   }
+ 
++  // Publish the bootloader-provided device tree (carries the per-boot Gunyah
++  // Resource Manager capids injected by ABL) as an FDT HOB so FdtDxe can turn
++  // it into the EFI gFdtTableGuid configuration table.
++  if (mDeviceTreeBase != 0) {
++    BuildGuidDataHob (&gFdtHobGuid, &mDeviceTreeBase, sizeof (mDeviceTreeBase));
++  }
++
+   // Build CPU HOB
+   BuildCpuHob (ArmGetPhysicalAddressBits (), PcdGet8 (PcdPrePiCpuIoSize));
+ 
+diff --git a/Silicon/Silicium/SiliciumPkg/Sec/Sec.inf b/Silicon/Silicium/SiliciumPkg/Sec/Sec.inf
+index 79afd19..f17ded8 100644
+--- a/Silicon/Silicium/SiliciumPkg/Sec/Sec.inf
++++ b/Silicon/Silicium/SiliciumPkg/Sec/Sec.inf
+@@ -52,6 +52,7 @@
+ 
+ [Guids]
+   gArmMpCoreInfoGuid
++  gFdtHobGuid
+ 
+ [Pcd]
+   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString
+diff --git a/Silicon/Silicium/SiliciumPkg/SiliciumPkg.dsc.inc b/Silicon/Silicium/SiliciumPkg/SiliciumPkg.dsc.inc
+index 00ec09e..39302e5 100644
+--- a/Silicon/Silicium/SiliciumPkg/SiliciumPkg.dsc.inc
++++ b/Silicon/Silicium/SiliciumPkg/SiliciumPkg.dsc.inc
+@@ -489,6 +489,11 @@
+   MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
+   SiliciumPkg/Drivers/SmBiosTableDxe/SmBiosTableDxe.inf
+ 
++  #
++  # Debug Log to File
++  #
++  SiliciumPkg/Drivers/LogToFileDxe/LogToFileDxe.inf
++
+   #
+   # ACPI
+   #

@@ -1,0 +1,33 @@
+## @file
+#  Print PSCI version and per-core affinity state on the console.
+#
+#  Diagnostic only: the driver asks ABL's PSCI implementation a few
+#  questions and prints the answers.  It does not change the boot flow.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = PsciDiagDxe
+  FILE_GUID                      = 8F3C2A64-1D57-4E2B-9C08-5B7A6E4F1D32
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = PsciDiagEntryPoint
+
+[Sources]
+  PsciDiagDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  ArmMonitorLib
+
+[Depex]
+  TRUE
